@@ -1,14 +1,20 @@
 package com.haibao.leveldb.api;
 
 import cn.hutool.core.lang.Console;
-import cn.hutool.core.util.StrUtil;
-import com.haibao.leveldb.utils.ObjectAndByte;
+import cn.hutool.core.util.ObjectUtil;
+import com.haibao.leveldb.api.builder.LocalOptions;
+import com.haibao.leveldb.utils.GenericsUtils;
+import com.haibao.leveldb.utils.KVStoreSerializer;
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
+import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 import org.iq80.leveldb.DB;
 import org.iq80.leveldb.DBFactory;
 import org.iq80.leveldb.Logger;
@@ -18,22 +24,22 @@ import org.iq80.leveldb.WriteBatch;
 import org.iq80.leveldb.WriteOptions;
 import org.iq80.leveldb.impl.Iq80DBFactory;
 
-import static org.iq80.leveldb.impl.Iq80DBFactory.bytes;
-
 /**
  * Leveldb java 客户端
  *
  * @author ml.c
  * @date 5:09 PM 4/23/21
  **/
-public class LeveldbServiceImpl<T> implements LeveldbService<T>{
+public class LeveldbServiceImpl<K, V> implements LeveldbService<K, V> {
 
-    private static final String PATH = "data/emdisdb";
-//    private static final Charset CHARSET = Charset.forName("utf-8");
+    KVStoreSerializer kvStoreSerializer = new KVStoreSerializer();
+
+    private static final String PATH = "cache/data/emdisdb";
     private static final File FILE = new File(PATH);
 
-    private static  DBFactory factory;
-    private static  Options options;
+    private static DBFactory factory;
+    private static Options options;
+
     static {
         factory = new Iq80DBFactory();
 
@@ -43,36 +49,22 @@ public class LeveldbServiceImpl<T> implements LeveldbService<T>{
                 Console.log(message);
             }
         };
-
-        options = new Options();
-        // 默认如果没有则创建
-        options.createIfMissing(true);
-
-        //LevelDB 的磁盘数据是以数据库块的形式存储的，默认的块大小是 4k。
-        // 适当提升块大小将有益于批量大规模遍历操作的效率，如果随机读比较频繁，这时候块小点性能又会稍好，这就要求我们自己去折中选择。
-        options.blockSize(8092);
-
-        //Getting informational log messages.
-        options.logger(logger);
-
-//        //Disabling Compression
-//        options.compressionType(CompressionType.NONE);
-
-//        //默认是开启压缩
-//        options.compressionType(CompressionType.SNAPPY);
-
-        //Configuring the Cache
-        // 100MB cache
-        options.cacheSize(100 * 1048576);
+        options = new LocalOptions.Builder()
+                .createIfMissing(true)
+                .blockSize(8092)
+                .logger(logger)
+                // 100MB cache
+                .cacheSize(100 * 1048576).build();
     }
 
     /**
      * 获取DB
+     *
      * @return
      * @throws IOException
      */
-    private DB getDB(){
-        DB db  = null;
+    private DB getDB() {
+        DB db = null;
         try {
             db = factory.open(FILE, options);
         } catch (IOException e) {
@@ -85,7 +77,7 @@ public class LeveldbServiceImpl<T> implements LeveldbService<T>{
      * 关闭 DB
      */
     private void close(DB db) {
-        if(null != db){
+        if (null != db) {
             try {
                 db.close();
             } catch (IOException e) {
@@ -96,56 +88,57 @@ public class LeveldbServiceImpl<T> implements LeveldbService<T>{
 
     /**
      * 校验key
+     *
      * @param k
      */
-    private void checkNull(String k){
-        if(StrUtil.isEmpty(k)){
-           throw new IllegalArgumentException("key is null,please check it!");
+    private void checkNull(Object k) {
+        if (ObjectUtil.isEmpty(k)) {
+            throw new IllegalArgumentException("key is null,please check it!");
         }
     }
 
     @Override
-    public void set(String k, T v) {
+    public void set(K k, V v) {
         DB db = null;
         try {
             db = getDB();
             checkNull(k);
-            db.put(bytes(k), ObjectAndByte.toByteArray(v));
-        }finally {
-            close(db);
-        }
-    }
-
-    @Override
-    public void setSync(String k, T v) {
-        DB db = null;
-        try {
-            checkNull(k);
-            db =getDB();
-            WriteOptions writeOptions = new WriteOptions().sync(true);
-            db.put(bytes(k), ObjectAndByte.toByteArray(v), writeOptions);
+            db.put(kvStoreSerializer.serialize(k), kvStoreSerializer.serialize(v));
         } finally {
             close(db);
         }
     }
 
     @Override
-    public void setBatch(Map<String,T> map) {
+    public void setSync(K k, V v) {
+        DB db = null;
+        try {
+            checkNull(k);
+            db = getDB();
+            WriteOptions writeOptions = new WriteOptions().sync(true);
+            db.put(kvStoreSerializer.serialize(k), kvStoreSerializer.serialize(v), writeOptions);
+        } finally {
+            close(db);
+        }
+    }
+
+    @Override
+    public void setBatch(Map<K, V> map) {
         DB db = null;
         WriteBatch writeBatch = null;
         try {
             db = getDB();
             writeBatch = db.createWriteBatch();
 
-            for (String key : map.keySet()) {
-                writeBatch.put(bytes(key),ObjectAndByte.toByteArray(map.get(key)));
+            for (K key : map.keySet()) {
+                writeBatch.put(kvStoreSerializer.serialize(key), kvStoreSerializer.serialize(map.get(key)));
             }
             db.write(writeBatch);
         } catch (Exception e) {
             e.printStackTrace();
-        }finally {
+        } finally {
             try {
-                if(null != writeBatch){
+                if (null != writeBatch) {
                     writeBatch.close();
                 }
             } catch (IOException e) {
@@ -157,14 +150,29 @@ public class LeveldbServiceImpl<T> implements LeveldbService<T>{
     }
 
     @Override
-    public T get(String k) {
-
+    public Object get(Object o) {
         DB db = null;
-        T obj = null;
+        Object obj = null;
+        try {
+            checkNull(o);
+            db = getDB();
+            byte[] data = db.get(kvStoreSerializer.serialize(o));
+            obj = kvStoreSerializer.deserialize(data, Object.class);
+        } finally {
+            close(db);
+        }
+        return obj;
+    }
+
+    @Override
+    public V get(K k, Class<V> vClass) {
+        DB db = null;
+        V obj = null;
         try {
             checkNull(k);
             db = getDB();
-            obj = (T)ObjectAndByte.toObject(db.get(bytes(k)));
+            byte[] data = db.get(kvStoreSerializer.serialize(k));
+            obj = kvStoreSerializer.deserialize(data, vClass);
         } finally {
             close(db);
         }
@@ -173,30 +181,30 @@ public class LeveldbServiceImpl<T> implements LeveldbService<T>{
     }
 
     @Override
-    public boolean remove(String k) {
+    public boolean remove(K k) {
         DB db = null;
         try {
             checkNull(k);
             db = getDB();
-            db.delete(bytes(k));
-        }catch (Exception e){
+            db.delete(kvStoreSerializer.serialize(k));
+        } catch (Exception e) {
             e.printStackTrace();
             return false;
-        }finally {
+        } finally {
             close(db);
         }
         return true;
     }
 
     @Override
-    public boolean removeSync(String k) {
+    public boolean removeSync(K k) {
 
         DB db = null;
         try {
             checkNull(k);
-            db =getDB();
+            db = getDB();
             WriteOptions writeOptions = new WriteOptions().sync(true);
-            db.delete(bytes(k),writeOptions);
+            db.delete(kvStoreSerializer.serialize(k), writeOptions);
         } finally {
             close(db);
         }
@@ -205,24 +213,24 @@ public class LeveldbServiceImpl<T> implements LeveldbService<T>{
     }
 
     @Override
-    public boolean removeBatch(Set<String> set) {
+    public boolean removeBatch(Set<K> set) {
 
         DB db = null;
         WriteBatch writeBatch = null;
         try {
             db = getDB();
             writeBatch = db.createWriteBatch();
-            for (String k : set) {
-                writeBatch.delete(bytes(k));
+            for (K k : set) {
+                writeBatch.delete(kvStoreSerializer.serialize(k));
             }
             db.write(writeBatch);
 
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             return false;
-        }finally {
+        } finally {
             try {
-                if(null != writeBatch){
+                if (null != writeBatch) {
                     writeBatch.close();
                 }
             } catch (IOException e) {
@@ -236,7 +244,7 @@ public class LeveldbServiceImpl<T> implements LeveldbService<T>{
 
 
     @Override
-    public LinkedHashMap scan(String startKey, String endKey, int limit) {
+    public LinkedHashMap scan(K startKey, K endKey, int limit) {
         //todo
         return null;
     }

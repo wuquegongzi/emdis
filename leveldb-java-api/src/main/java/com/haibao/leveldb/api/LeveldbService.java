@@ -8,57 +8,54 @@ import org.iq80.leveldb.Snapshot;
 
 /**
  * Leveldb 客户端接口
- * @param <T>
+ * @param <K,V>
  */
-public interface LeveldbService<T> {
+public interface LeveldbService<K,V> {
 
     /**
      *
      * @param k
      * @param v
      */
-    void set(String k,T v);
+    void set(K k,V v);
 
     /**
      *
      * @param k
      * @param v
      */
-    void setSync(String k,T v);
+    void setSync(K k,V v);
 
     /**
      *
      * @param map
      */
-    void setBatch(Map<String,T> map);
+    void setBatch(Map<K,V> map);
+
+    Object get(Object o);
+
+    V get(K k,Class<V> vClass);
 
     /**
      *
      * @param k
      * @return
      */
-    T get(String k);
+    boolean remove(K k);
 
     /**
      *
      * @param k
      * @return
      */
-    boolean remove(String k);
-
-    /**
-     *
-     * @param k
-     * @return
-     */
-    boolean removeSync(String k);
+    boolean removeSync(K k);
 
     /**
      *
      * @param set
      * @return
      */
-    boolean removeBatch(Set<String> set);
+    boolean removeBatch(Set<K> set);
 
     /**
      *
@@ -67,7 +64,7 @@ public interface LeveldbService<T> {
      * @param limit
      * @return
      */
-    LinkedHashMap scan(String startKey, String endKey, int limit);
+    LinkedHashMap scan(K startKey, K endKey, int limit);
 
     /**
      * 得到快照

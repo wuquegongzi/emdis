@@ -9,7 +9,7 @@ import java.io.ObjectOutputStream;
 /**
  * 序列化 反序列化
  *
- * @author minglei.chen
+ * @author ml.c
  * @date 6:45 PM 4/23/21
  **/
 public class ObjectAndByte {
