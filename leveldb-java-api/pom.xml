@@ -11,6 +11,13 @@
 
     <artifactId>leveldb-java-api</artifactId>
 
+    <properties>
+        <version.slf4j>1.7.5</version.slf4j>
+        <version.testng>6.8.5</version.testng>
+        <version.slf4j.simple>1.7.5</version.slf4j.simple>
+        <version.hutool>5.6.3</version.hutool>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.iq80.leveldb</groupId>
@@ -24,7 +31,25 @@
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
-            <version>5.6.3</version>
+            <version>${version.hutool}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${version.slf4j}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <version>${version.testng}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>${version.slf4j.simple}</version>
+            <scope>test</scope>
         </dependency>
 
         <dependency>

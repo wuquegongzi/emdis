@@ -20,6 +20,9 @@ public class KVStoreSerializer {
     }
 
     public final <T> T deserialize(byte[] data, Class<T> klass){
+        if(null == data || data.length <= 0){
+            return null;
+        }
         if (String.class.equals(klass)) {
             return (T) asString(data);
         } else {

@@ -1,10 +1,11 @@
+import com.google.common.cache.Cache;
 import com.haibao.leveldb.api.LeveldbService;
 import com.haibao.leveldb.api.LeveldbServiceImpl;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 /**
- * TODO
+ * LeveldbService test
  *
  * @author ml.c
  * @date 7:14 PM 4/23/21
@@ -16,6 +17,7 @@ public class LevelDBServiceTest {
 
     @Test
     public void putTest() {
+
         String key = "k-10000";
         leveldbService.set(key, UUID.randomUUID());
         UUID uuid = leveldbService.get(key,UUID.class);

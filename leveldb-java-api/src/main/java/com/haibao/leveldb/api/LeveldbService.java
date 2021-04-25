@@ -32,7 +32,7 @@ public interface LeveldbService<K,V> {
      */
     void setBatch(Map<K,V> map);
 
-    Object get(Object o);
+    V get(Object o);
 
     V get(K k,Class<V> vClass);
 
@@ -81,4 +81,7 @@ public interface LeveldbService<K,V> {
     boolean repairDB(String dbDir, Options options);
 
 
+    void removeAll();
+
+    long size();
 }

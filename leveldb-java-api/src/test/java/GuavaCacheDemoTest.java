@@ -1,21 +1,22 @@
-import com.google.common.cache.Cache;
+
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
-import com.haibao.leveldb.cache.LeveldbCache;
 import java.util.concurrent.TimeUnit;
+import org.junit.jupiter.api.Test;
 
 /**
- * GuavaCacheDemo
+ * GuavaCache Demo
  *
  * @author ml.c
  * @date 8:33 PM 4/24/21
  **/
-public class GuavaCacheDemo1 {
+public class GuavaCacheDemoTest {
 
-    public static void main(String[] args) {
+    @Test
+    public void GuavaCacheDemo() {
         CacheLoader<String, String> loader = new CacheLoader<String, String>() {
             public String load(String key) throws Exception {
                 Thread.sleep(1000);
