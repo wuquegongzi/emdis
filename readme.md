@@ -3,34 +3,22 @@
 An embeded, reliable key-value store for Java
 
 
-
 ## 模块说明
 
-1.  leveldb-java-api 
+### leveldb-java-api模块
+   - leveldb的api封装
+   - 基于guava+leveldb的结合，实现guava接口
+   - cache注解  *todo*
 
-   - ​    leveldb的api封装
-
-   - ​    基于guava+leveldb的结合，实现guava接口
-
-   - ​    cache注解  *todo*
-
-     
-
-2. leveldb-java-emdis
-
-   - ​    类redis数据结构的本地嵌入式KV结构数据库实现 *todo*
-
-     
-
-3.  emdis-spring-boot-starter
-
-   - ​    emdis的springboot启动器实现 *todo*  
+### leveldb-java-emdis模块
+   - 类redis数据结构的本地嵌入式KV结构数据库实现 *todo*
+ 
+### emdis-spring-boot-starter 模块
+   - emdis的springboot启动器实现 *todo*  
 
 ## 使用说明
 
 -  leveldb-java-api 缓存使用说明
-
- 
 
 ```java
  Cache<String, UUID> emdisCache =
@@ -39,8 +27,6 @@ An embeded, reliable key-value store for Java
                          .softValues()
                          .build();
 ```
-
-
 
 ## 待优化项
 
