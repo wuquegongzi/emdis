@@ -241,7 +241,7 @@ public abstract class AbstractPersistingCache<K, V> implements Cache<K, V> {
 
     @Override
     public long size() {
-        return underlyingCache.size() + sizeOfPersisted();
+        return  underlyingCache.size() + sizeOfPersisted();
     }
 
     @Override

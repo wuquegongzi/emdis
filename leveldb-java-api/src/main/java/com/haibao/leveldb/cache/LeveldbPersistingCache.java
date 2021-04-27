@@ -48,7 +48,8 @@ public class LeveldbPersistingCache<K, V> extends AbstractPersistingCache<K, V> 
         if (!isPersist(key)) {
             return;
         }
-        leveldbService.setSync(key,value);
+//        leveldbService.setSync(key,value);
+        leveldbService.set(key,value);
     }
 
 

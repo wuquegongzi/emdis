@@ -149,9 +149,19 @@ public class LeveldbServiceImpl<K, V> implements LeveldbService<K, V> {
 
     @Override
     public V get(Object o) {
+        V v = null;
         checkNull(o);
         byte[] data = db.get(kvStoreSerializer.serialize(o));
-        return (V) kvStoreSerializer.deserialize(data, Object.class);
+        try {
+            v = (V) kvStoreSerializer.deserialize(data, Object.class);
+        } catch (Exception e) {
+//            e.printStackTrace();
+        }
+        //todo 判断 byte[] 类型
+        if(null == v){
+            v = (V) kvStoreSerializer.deserialize(data, String.class);
+        }
+        return v;
     }
 
     @Override
@@ -249,7 +259,7 @@ public class LeveldbServiceImpl<K, V> implements LeveldbService<K, V> {
             if(null != data && data.length > 0){
                 Map<String, Object> configMap = kvStoreSerializer.deserialize(data, Map.class);
                 if (null != configMap && configMap.containsKey(LeveldbEnums.SIZE.getProperty())) {
-                    return (Integer) configMap.get(LeveldbEnums.SIZE.getProperty());
+                    return ((Integer) configMap.get(LeveldbEnums.SIZE.getProperty()) - 1);
                 }
             }
         } catch (DBException e) {
