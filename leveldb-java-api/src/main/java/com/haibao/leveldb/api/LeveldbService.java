@@ -30,7 +30,7 @@ public interface LeveldbService<K,V> {
      *
      * @param map
      */
-    void setBatch(Map<K,V> map);
+    void setBatch(Map<K,V> map,boolean syn);
 
     V get(Object o);
 
@@ -52,10 +52,11 @@ public interface LeveldbService<K,V> {
 
     /**
      *
-     * @param set
+     * @param set  key的集合
+     * @param syn  是否同时删除持久化
      * @return
      */
-    boolean removeBatch(Set<K> set);
+    boolean removeBatch(Set<K> set,boolean syn);
 
     /**
      *
@@ -80,8 +81,21 @@ public interface LeveldbService<K,V> {
      */
     boolean repairDB(String dbDir, Options options);
 
-
     void removeAll();
 
     long size();
+
+    /**
+     * GetApproximateSizes方法可以被用来得到一个或多个key range所占用的文件系统空间的近似大小
+     * @param keyMap
+     * @return
+     */
+    long[] getApproximateSizes(Map<String,String> keyMap);
+
+    boolean status();
+
+    /**
+     * 销毁
+     */
+    void destroy();
 }

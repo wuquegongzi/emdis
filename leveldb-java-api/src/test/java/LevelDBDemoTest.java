@@ -106,7 +106,7 @@ public class LevelDBDemoTest {
 
     @Test
     public void getApproximateSizes(){
-        long[] sizes = db.getApproximateSizes(new Range(bytes("a"), bytes("k")), new Range(bytes("k"), bytes("z")));
+        long[] sizes = db.getApproximateSizes(new Range(bytes("a"), bytes("u")), new Range(bytes("v"), bytes("z")));
         System.out.println("Size: "+sizes[0]+", "+sizes[1]);
     }
 
@@ -124,8 +124,8 @@ public class LevelDBDemoTest {
         byte[] keyByte1 = "key-01".getBytes(CHARSET);
         byte[] keyByte2 = "key-02".getBytes(CHARSET);
         // 会写入磁盘中
-        db.put(keyByte1, "value-01-1".getBytes(CHARSET));
-        db.put(keyByte2, "value-02-2".getBytes(CHARSET));
+//        db.put(keyByte1, "value-01-1".getBytes(CHARSET));
+//        db.put(keyByte2, "value-02-2".getBytes(CHARSET));
 
         String value1 = new String(db.get(keyByte1), CHARSET);
         System.out.println(value1);
@@ -338,10 +338,15 @@ public class LevelDBDemoTest {
 
         DBIterator it = db.iterator();
         try {
+            int sizeTemp = 0;
+
             while (it.hasNext()) {
-                Map.Entry<byte[], byte[]> next = it.next();
-                System.out.println("key = " + new String(next.getKey(),CHARSET)+" val = " + new String(next.getValue(),CHARSET));
+//                Map.Entry<byte[], byte[]> next = it.next();
+//                System.out.println("key = " + new String(next.getKey(),CHARSET)+" val = " + new String(next.getValue(),CHARSET));
+                sizeTemp ++;
             }
+
+            System.out.println(sizeTemp);
         } catch (Exception e) {
             e.printStackTrace();
         }finally {
@@ -356,11 +361,14 @@ public class LevelDBDemoTest {
 
         DBIterator iterator = db.iterator();
         try {
+            int size = 0;
             for(iterator.seekToFirst(); iterator.hasNext(); iterator.next()) {
-                String key = asString(iterator.peekNext().getKey());
-                String value = asString(iterator.peekNext().getValue());
-                System.out.println(key+" = "+value);
+//                String key = asString(iterator.peekNext().getKey());
+//                String value = asString(iterator.peekNext().getValue());
+//                System.out.println(key+" = "+value);
+                size++;
             }
+            System.out.println(size);
         } finally {
             // Make sure you close the iterator to avoid resource leaks.
             try {

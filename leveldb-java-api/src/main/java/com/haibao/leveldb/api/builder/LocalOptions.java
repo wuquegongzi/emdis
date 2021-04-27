@@ -31,6 +31,7 @@ public class LocalOptions extends Options {
         }
 
         this.paranoidChecks(builder.paranoidChecks);
+        this.verifyChecksums(builder.verifyChecksums);
 
         if(null != builder.comparator){
             this.comparator(builder.comparator);
@@ -97,7 +98,7 @@ public class LocalOptions extends Options {
             return this;
         }
 
-        public Builder verifyChecksums(boolean createIfMissing) {
+        public Builder verifyChecksums(boolean verifyChecksums) {
             this.verifyChecksums = verifyChecksums;
             return this;
         }
