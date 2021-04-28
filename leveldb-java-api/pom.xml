@@ -16,6 +16,7 @@
         <version.testng>6.8.5</version.testng>
         <version.slf4j.simple>1.7.5</version.slf4j.simple>
         <version.hutool>5.6.3</version.hutool>
+        <version.disruptor>3.4.2</version.disruptor>
     </properties>
 
     <dependencies>
@@ -28,6 +29,14 @@
             <artifactId>leveldb-api</artifactId>
         </dependency>
 
+        <!-- disruptor -->
+        <dependency>
+            <groupId>com.lmax</groupId>
+            <artifactId>disruptor</artifactId>
+            <version>${version.disruptor}</version>
+        </dependency>
+
+        <!-- hutool -->
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>

@@ -45,6 +45,7 @@ public final class EmdisCacheBuilder<K, V> {
 
     private RemovalListener<? super K, ? super V> removalListener;
     private LeveldbService leveldbService;
+    private long maximumSize;
 
     private EmdisCacheBuilder() {
         this.underlyingCacheBuilder = CacheBuilder.newBuilder();
@@ -99,6 +100,7 @@ public final class EmdisCacheBuilder<K, V> {
      */
     public EmdisCacheBuilder<K, V> maximumSize(long size) {
         underlyingCacheBuilder.maximumSize(size);
+        maximumSize = size;
         return this;
     }
 
@@ -186,6 +188,11 @@ public final class EmdisCacheBuilder<K, V> {
      * {@link CacheBuilder#build()}
      */
     public <K1 extends K, V1 extends V> Cache<K1, V1> build() {
+        if(maximumSize < 0){
+            maximumSize = 0;
+        }
+        underlyingCacheBuilder.maximumSize(maximumSize);
+
         if (leveldbService == null) {
             return new LeveldbPersistingCache<K1, V1>(underlyingCacheBuilder, EmdisCacheBuilder.<K1, V1>castRemovalListener(removalListener));
         } else {

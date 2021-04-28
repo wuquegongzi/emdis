@@ -19,6 +19,32 @@ public class KVStoreSerializer {
         }
     }
 
+    public final <T> T deserialize(byte[] data){
+
+        if(null == data || data.length <= 0){
+            return null;
+        }
+
+        // 不足6位，直接认为是字符串，,经测试单个字符序列化后的byte[]也有8位
+        if (data.length < 6)
+        {
+            return (T) asString(data);
+        }
+
+        String protocol = Integer.toHexString(data[0] & 0x000000ff) + Integer.toHexString(data[1] & 0x000000ff);
+
+        T obj;
+        // 如果是jdk序列化后的
+        if ("ACED".equals(protocol.toUpperCase())){
+            obj = (T) ObjectAndByte.toObject(data);
+            if (obj != null){
+                return obj;
+            }
+        }
+
+        return (T) asString(data);
+    }
+
     public final <T> T deserialize(byte[] data, Class<T> klass){
         if(null == data || data.length <= 0){
             return null;

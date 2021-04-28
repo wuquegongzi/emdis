@@ -1,12 +1,11 @@
 package com.haibao.leveldb.api;
 
 import cn.hutool.core.util.ObjectUtil;
-import com.google.common.collect.Maps;
 import com.haibao.leveldb.api.builder.LeveldbEnums;
 import com.haibao.leveldb.api.builder.LocalLeveldbClient;
 import com.haibao.leveldb.utils.KVStoreSerializer;
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -14,12 +13,14 @@ import java.util.Map;
 import java.util.Set;
 import org.iq80.leveldb.DB;
 import org.iq80.leveldb.DBException;
+import org.iq80.leveldb.DBIterator;
 import org.iq80.leveldb.Options;
 import org.iq80.leveldb.Range;
 import org.iq80.leveldb.Snapshot;
 import org.iq80.leveldb.WriteBatch;
 import org.iq80.leveldb.WriteOptions;
 
+import static org.iq80.leveldb.impl.Iq80DBFactory.asString;
 import static org.iq80.leveldb.impl.Iq80DBFactory.bytes;
 
 /**
@@ -30,6 +31,7 @@ import static org.iq80.leveldb.impl.Iq80DBFactory.bytes;
  **/
 public class LeveldbServiceImpl<K, V> implements LeveldbService<K, V> {
 
+    //init KVStoreSerializer
     KVStoreSerializer kvStoreSerializer = new KVStoreSerializer();
 
     DB db = null;
@@ -55,40 +57,10 @@ public class LeveldbServiceImpl<K, V> implements LeveldbService<K, V> {
         }
     }
 
-    private void checkMapNull(Map<K,V> map) {
-        if(map.containsKey(null)){
+    private void checkMapNull(Map<K, V> map) {
+        if (map.containsKey(null)) {
             throw new IllegalArgumentException("parms map contains null key,please check it!");
         }
-    }
-
-    /**
-     * 更新emdis自定义配置项
-     * @param leveldbEnums
-     * @param v
-     */
-    private void updateEmdisConfiguration(LeveldbEnums leveldbEnums, Object v) {
-        Map<String,Object> configMap;
-
-        byte[] data = db.get(kvStoreSerializer.serialize(LocalLeveldbClient.EMDIS_CONFIG_KEY));
-        if(null == data || data.length < 1){
-            configMap = Maps.newHashMap();
-            configMap.put(leveldbEnums.getProperty(),v);
-        }else{
-            configMap = kvStoreSerializer.deserialize(data, Map.class);
-            if(configMap.containsKey(leveldbEnums.getProperty())){
-                Object objVal = configMap.get(leveldbEnums.getProperty());
-                if(LeveldbEnums.SIZE.equals(leveldbEnums)){
-                    int intVal = (Integer) objVal;
-                    configMap.put(leveldbEnums.getProperty(),intVal+(Integer) v);
-                }else{
-                    //扩展 todo
-                }
-            } else {
-                configMap.put(leveldbEnums.getProperty(),v);
-            }
-        }
-
-        db.put(kvStoreSerializer.serialize(LocalLeveldbClient.EMDIS_CONFIG_KEY), kvStoreSerializer.serialize(configMap));
     }
 
     @Override
@@ -96,7 +68,6 @@ public class LeveldbServiceImpl<K, V> implements LeveldbService<K, V> {
         try {
             checkNull(k);
             db.put(kvStoreSerializer.serialize(k), kvStoreSerializer.serialize(v));
-            updateEmdisConfiguration(LeveldbEnums.SIZE,1);
         } catch (DBException e) {
             e.printStackTrace();
         }
@@ -108,14 +79,13 @@ public class LeveldbServiceImpl<K, V> implements LeveldbService<K, V> {
             checkNull(k);
             WriteOptions writeOptions = new WriteOptions().sync(true);
             db.put(kvStoreSerializer.serialize(k), kvStoreSerializer.serialize(v), writeOptions);
-            updateEmdisConfiguration(LeveldbEnums.SIZE,1);
         } catch (DBException e) {
             e.printStackTrace();
         }
     }
 
     @Override
-    public void setBatch(Map<K, V> map,boolean syn) {
+    public void setBatch(Map<K, V> map, boolean syn) {
 
         checkMapNull(map);
         WriteBatch writeBatch = null;
@@ -126,14 +96,12 @@ public class LeveldbServiceImpl<K, V> implements LeveldbService<K, V> {
                 writeBatch.put(kvStoreSerializer.serialize(key), kvStoreSerializer.serialize(map.get(key)));
             }
 
-            if(syn){
+            if (syn) {
                 WriteOptions writeOptions = new WriteOptions().sync(true);
-                db.write(writeBatch,writeOptions);
-            }else{
+                db.write(writeBatch, writeOptions);
+            } else {
                 db.write(writeBatch);
             }
-
-            updateEmdisConfiguration(LeveldbEnums.SIZE,map.size());
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -152,16 +120,7 @@ public class LeveldbServiceImpl<K, V> implements LeveldbService<K, V> {
         V v = null;
         checkNull(o);
         byte[] data = db.get(kvStoreSerializer.serialize(o));
-        try {
-            v = (V) kvStoreSerializer.deserialize(data, Object.class);
-        } catch (Exception e) {
-//            e.printStackTrace();
-        }
-        //todo 判断 byte[] 类型
-        if(null == v){
-            v = (V) kvStoreSerializer.deserialize(data, String.class);
-        }
-        return v;
+        return kvStoreSerializer.deserialize(data);
     }
 
     @Override
@@ -176,7 +135,6 @@ public class LeveldbServiceImpl<K, V> implements LeveldbService<K, V> {
         try {
             checkNull(k);
             db.delete(kvStoreSerializer.serialize(k));
-            updateEmdisConfiguration(LeveldbEnums.SIZE,-1);
         } catch (Exception e) {
             e.printStackTrace();
             return false;
@@ -190,7 +148,6 @@ public class LeveldbServiceImpl<K, V> implements LeveldbService<K, V> {
             checkNull(k);
             WriteOptions writeOptions = new WriteOptions().sync(true);
             db.delete(kvStoreSerializer.serialize(k), writeOptions);
-            updateEmdisConfiguration(LeveldbEnums.SIZE,-1);
             return true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -199,7 +156,7 @@ public class LeveldbServiceImpl<K, V> implements LeveldbService<K, V> {
     }
 
     @Override
-    public boolean removeBatch(Set<K> set,boolean syn) {
+    public boolean removeBatch(Set<K> set, boolean syn) {
 
         WriteBatch writeBatch = null;
         try {
@@ -208,13 +165,12 @@ public class LeveldbServiceImpl<K, V> implements LeveldbService<K, V> {
                 writeBatch.delete(kvStoreSerializer.serialize(k));
             }
 
-            if(syn){
+            if (syn) {
                 WriteOptions writeOptions = new WriteOptions().sync(true);
-                db.write(writeBatch,writeOptions);
-            }else{
+                db.write(writeBatch, writeOptions);
+            } else {
                 db.write(writeBatch);
             }
-            updateEmdisConfiguration(LeveldbEnums.SIZE,set.size());
         } catch (Exception e) {
             e.printStackTrace();
             return false;
@@ -243,12 +199,67 @@ public class LeveldbServiceImpl<K, V> implements LeveldbService<K, V> {
 
     @Override
     public boolean repairDB(String dbDir, Options options) {
-        return LocalLeveldbClient.repairDB(dbDir,options);
+        return LocalLeveldbClient.repairDB(dbDir, options);
     }
 
     @Override
     public void removeAll() {
-        // todo
+
+        DBIterator iterator = db.iterator();
+        try {
+            Set<String> set = new HashSet();
+            int size = 0;
+            for (iterator.seekToFirst(); iterator.hasNext(); iterator.next()) {
+                String key = asString(iterator.peekNext().getKey());
+                set.add(key);
+                size++;
+                if (size > 1000) {
+                    removeBatchSyn(set);
+                    set = new HashSet();
+                    size = 0;
+                }
+            }
+
+            if(size > 0 || set.size() > 0){
+                removeBatchSyn(set);
+            }
+//            System.out.println(size);
+        } finally {
+            // Make sure you close the iterator to avoid resource leaks.
+            try {
+                iterator.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
+    private boolean removeBatchSyn(Set<String> set) {
+
+        WriteBatch writeBatch = null;
+        try {
+            writeBatch = db.createWriteBatch();
+            for (String k : set) {
+                writeBatch.delete(kvStoreSerializer.serialize(k));
+            }
+
+            WriteOptions writeOptions = new WriteOptions().sync(true);
+            db.write(writeBatch, writeOptions);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            try {
+                if (null != writeBatch) {
+                    writeBatch.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return true;
     }
 
     @Override
@@ -256,10 +267,10 @@ public class LeveldbServiceImpl<K, V> implements LeveldbService<K, V> {
 
         try {
             byte[] data = db.get(kvStoreSerializer.serialize(LocalLeveldbClient.EMDIS_CONFIG_KEY));
-            if(null != data && data.length > 0){
+            if (null != data && data.length > 0) {
                 Map<String, Object> configMap = kvStoreSerializer.deserialize(data, Map.class);
                 if (null != configMap && configMap.containsKey(LeveldbEnums.SIZE.getProperty())) {
-                    return ((Integer) configMap.get(LeveldbEnums.SIZE.getProperty()) - 1);
+                    return (Integer) configMap.get(LeveldbEnums.SIZE.getProperty());
                 }
             }
         } catch (DBException e) {
@@ -274,10 +285,10 @@ public class LeveldbServiceImpl<K, V> implements LeveldbService<K, V> {
 
         List<Range> rangeList = new LinkedList();
         for (String key : keyMap.keySet()) {
-            Range range = new Range(bytes(key),bytes(keyMap.get(key)));
+            Range range = new Range(bytes(key), bytes(keyMap.get(key)));
             rangeList.add(range);
         }
-        Range ranges[] = (Range[])rangeList.toArray();
+        Range ranges[] = (Range[]) rangeList.toArray();
         long[] sizes = db.getApproximateSizes(ranges);
 
         return sizes;
@@ -287,7 +298,7 @@ public class LeveldbServiceImpl<K, V> implements LeveldbService<K, V> {
     public boolean status() {
         try {
             String stats = db.getProperty("leveldb.stats");
-            if(null == stats){
+            if (null == stats) {
                 return true;
             }
         } catch (Exception e) {

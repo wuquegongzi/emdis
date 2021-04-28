@@ -14,9 +14,9 @@ class RemovalNotifications {
     private static RemovalNotifications INSTANCE;
 
     private static RemovalNotifications getInstance() {
-        if (INSTANCE != null) return INSTANCE;
+        if (INSTANCE != null){ return INSTANCE;}
         synchronized (RemovalNotifications.class) {
-            if (INSTANCE != null) return INSTANCE;
+            if (INSTANCE != null){ return INSTANCE; }
             return INSTANCE = new RemovalNotifications();
         }
     }

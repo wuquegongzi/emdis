@@ -9,6 +9,9 @@ import com.google.common.cache.RemovalCause;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
+import com.haibao.leveldb.api.builder.LeveldbEnums;
+import com.haibao.leveldb.queue.DisruptorClient;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -68,6 +71,7 @@ public abstract class AbstractPersistingCache<K, V> implements Cache<K, V> {
                 try {
                     //保留数据
                     persistValue(removalNotification.getKey(), removalNotification.getValue());
+
                 } catch (IOException e) {
                     LOGGER.warn(String.format("Could not persist value %s to key %s",
                             removalNotification.getKey(), removalNotification.getValue()), e);
@@ -176,8 +180,8 @@ public abstract class AbstractPersistingCache<K, V> implements Cache<K, V> {
 
     @Override
     public V get(K k, Callable<? extends V> valueLoader) throws ExecutionException {
-        return underlyingCache.get(k, new LeveldbPersistedStateValueLoader(k, valueLoader));
 
+        return underlyingCache.get(k, new LeveldbPersistedStateValueLoader(k, valueLoader));
     }
 
     @Override

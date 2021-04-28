@@ -1,3 +1,4 @@
+import com.haibao.leveldb.api.builder.LocalLeveldbClient;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -26,53 +27,11 @@ import static org.iq80.leveldb.impl.Iq80DBFactory.bytes;
  * @author ml.c
  * @date 11:36 PM 4/22/21
  **/
-public class LevelDBDemoTest {
+public class LevelDBDemoTest2 {
 
-    private static final String PATH = "cache/data/emdisdb";
     private static final Charset CHARSET = Charset.forName("utf-8");
-    private static final File FILE = new File(PATH);
 
-    DB db  = null;
-    DBFactory factory = null;
-
-    /**
-     *
-     * @throws IOException
-     */
-    @BeforeEach
-    public void Before() throws IOException {
-
-        factory = new Iq80DBFactory();
-
-        Logger logger = new Logger() {
-            public void log(String message) {
-                System.out.println(message);
-            }
-        };
-
-        Options options = new Options();
-        // 默认如果没有则创建
-        options.createIfMissing(true);
-
-        //LevelDB 的磁盘数据是以数据库块的形式存储的，默认的块大小是 4k。
-        // 适当提升块大小将有益于批量大规模遍历操作的效率，如果随机读比较频繁，这时候块小点性能又会稍好，这就要求我们自己去折中选择。
-        options.blockSize(8092);
-
-        //Getting informational log messages.
-        options.logger(logger);
-
-//        //Disabling Compression
-//        options.compressionType(CompressionType.NONE);
-
-//        //默认是开启压缩
-//        options.compressionType(CompressionType.SNAPPY);
-
-        //Configuring the Cache
-        // 100MB cache
-        options.cacheSize(100 * 1048576);
-
-        db  = factory.open(FILE, options);
-    }
+    DB db = LocalLeveldbClient.getInstance();
 
     @AfterEach
     public void After() {
@@ -85,18 +44,6 @@ public class LevelDBDemoTest {
         }
     }
 
-    /**
-     * Destroying a database.
-     */
-    @Test
-    public void destroy(){
-        Options options = new Options();
-        try {
-            factory.destroy(FILE, options);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 
     @Test
     public void getDbStatus(){
@@ -359,24 +306,26 @@ public class LevelDBDemoTest {
         }
 
 
-        DBIterator iterator = db.iterator();
-        try {
-            int size = 0;
-            for(iterator.seekToFirst(); iterator.hasNext(); iterator.next()) {
+//        DBIterator iterator = db.iterator();
+//        try {
+//            int size = 0;
+//            for(iterator.seekToFirst(); iterator.hasNext(); iterator.next()) {
 //                String key = asString(iterator.peekNext().getKey());
 //                String value = asString(iterator.peekNext().getValue());
 //                System.out.println(key+" = "+value);
-                size++;
-            }
-            System.out.println(size);
-        } finally {
-            // Make sure you close the iterator to avoid resource leaks.
-            try {
-                iterator.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+//                size++;
+//            }
+//            System.out.println(size);
+//        } finally {
+//            // Make sure you close the iterator to avoid resource leaks.
+//            try {
+//                iterator.close();
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        }
+
+
     }
 
 }
